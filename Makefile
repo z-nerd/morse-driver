@@ -5,7 +5,7 @@ MODULE_CONF = "$(MODULE_NAME)"
 MODULE_INSTALL_PATH = /lib/modules/$(shell uname -r)/$(MODULE_NAME).ko
 MODULE_CONF_PATH = /etc/modules-load.d/$(MODULE_NAME).conf
 
-OBJS = start.o stop.o lib/src/utility.o lib/src/morse.o
+OBJS = open.o close.o write.o start.o stop.o lib/src/utility.o lib/src/morse.o
 PWD = $(CURDIR)
 
 obj-m += $(MODULE_NAME).o
@@ -45,24 +45,35 @@ info:
 
 
 test:
-	make
-	make remove
 	make log-clear
-	make load
-	make remove
+	make install
+	echo "Zero test!" > /dev/morse
+	make uninstall
 	make log-show
-# 	make clean
-
+	#make clean
 
 install:
 	make
-	sudo cp $(MODULE_NAME).ko $(MODULE_INSTALL_PATH)
-	echo $(MODULE_CONF) | sudo tee $(MODULE_CONF_PATH) 
-	sudo depmod -a
+	make load
+	test ! -f /dev/morse && sudo mknod /dev/morse c 137 0 || true
+	sudo chmod ugo+rw /dev/morse
 
 
 uninstall:
-	test -f $(MODULE_INSTALL_PATH) && sudo rm $(MODULE_INSTALL_PATH) || true
-	test -f $(MODULE_CONF_PATH) && sudo rm $(MODULE_CONF_PATH) || true
-	sudo depmod -a
+	test -f /dev/morse && sudo rm -rf /dev/morse || true
+	make remove
+	test -f /dev/morse && sudo rm -rf /dev/morse || true
+	echo -e "\n\nUnfortunately currently need reboot to take effect!(Don't use /dev/morse otherwise your system crash and need reboot)\n\n"
 
+
+# install:
+# 	make
+# 	sudo cp $(MODULE_NAME).ko $(MODULE_INSTALL_PATH)
+# 	echo $(MODULE_CONF) | sudo tee $(MODULE_CONF_PATH) 
+# 	sudo depmod -a
+
+
+# uninstall:
+# 	test -f $(MODULE_INSTALL_PATH) && sudo rm $(MODULE_INSTALL_PATH) || true
+# 	test -f $(MODULE_CONF_PATH) && sudo rm $(MODULE_CONF_PATH) || true
+# 	sudo depmod -a
